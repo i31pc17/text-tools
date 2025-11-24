@@ -15,7 +15,10 @@
     "@iconify-json/simple-icons": "^1.2.58",
     "@nuxt/ui": "^4.1.0",
     "crypto-js": "^4.2.0",
-    "nuxt": "^4.2.1"
+    "fast-xml-parser": "^5.3.2",
+    "json5": "^2.2.3",
+    "nuxt": "^4.2.1",
+    "yaml": "^2.8.1"
   },
   "devDependencies": {
     "@types/crypto-js": "^4.2.2",

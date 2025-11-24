@@ -7,8 +7,8 @@ export interface TextTool {
 
 export const textTools: TextTool[] = [
   {
-    page: 'hash',
-    name: '해시 생성기',
+    page: 'json-viewer',
+    name: 'JSON 뷰어',
   },
   {
     page: 'array-converter',
@@ -29,7 +29,11 @@ export const textTools: TextTool[] = [
     name: 'JWT 디코더',
   },
   {
-    page: 'json-viewer',
-    name: 'JSON 뷰어',
+    page: 'format-converter',
+    name: 'JSON / XML / YAML 포맷 변환기',
+  },
+  {
+    page: 'hash',
+    name: '해시 생성기',
   },
 ]
