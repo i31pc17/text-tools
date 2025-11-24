@@ -1,4 +1,3 @@
-<!-- pages/tools/hash.vue -->
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import { useRouter } from "vue-router";

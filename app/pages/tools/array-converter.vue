@@ -1,4 +1,3 @@
-<!-- pages/tools/array-converter.vue -->
 <template>
   <UContainer class="py-8">
     <div class="space-y-6">

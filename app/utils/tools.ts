@@ -24,4 +24,8 @@ export const textTools: TextTool[] = [
     page: 'codec',
     name: 'Base64 & URL 인코더/디코더',
   },
+  {
+    page: 'jwt-decoder',
+    name: 'JWT 디코더',
+  },
 ]
