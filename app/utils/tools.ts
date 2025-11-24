@@ -28,4 +28,8 @@ export const textTools: TextTool[] = [
     page: 'jwt-decoder',
     name: 'JWT 디코더',
   },
+  {
+    page: 'json-viewer',
+    name: 'JSON 뷰어',
+  },
 ]

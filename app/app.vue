@@ -48,9 +48,9 @@ const currentYear = new Date().getFullYear()
 
     <!-- 본문 -->
     <UMain>
-      <UContainer class="py-6 md:py-10">
+      <div class="w-full px-4 sm:px-6 lg:px-8 py-6 md:py-10">
         <NuxtPage />
-      </UContainer>
+      </div>
     </UMain>
 
     <!-- 구분선 -->
