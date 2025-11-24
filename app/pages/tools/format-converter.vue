@@ -298,7 +298,7 @@ function formatLabel(fmt: Format) {
                 </p>
               </div>
               <UButton
-                size="2xs"
+                size="xs"
                 variant="ghost"
                 @click="rawInput = ''"
               >
@@ -338,7 +338,7 @@ function formatLabel(fmt: Format) {
                   길이: {{ outputLength }} 자
                 </span>
                 <UButton
-                  size="2xs"
+                  size="xs"
                   variant="soft"
                   icon="i-heroicons-clipboard"
                   :disabled="!currentOutput"
