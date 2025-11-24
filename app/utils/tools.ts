@@ -15,4 +15,13 @@ export const textTools: TextTool[] = [
     name: 'Array 변환기',
     description: 'JSON / XML / 줄바꿈·콤마 텍스트에서 원하는 필드만 뽑아서 다양한 배열 포맷으로 변환합니다.'
   },
+  {
+    page: 'list-compare',
+    name: '리스트 비교',
+    description: '엔터(줄바꿈)로 구분된 두 개의 리스트를 비교해서 합집합, 교집합, 차집합, 대칭차집합을 한 번에 확인하고 복사할 수 있습니다.'
+  },
+  {
+    page: 'codec',
+    name: 'Base64 & URL 인코더/디코더',
+  },
 ]
