@@ -36,4 +36,8 @@ export const textTools: TextTool[] = [
     page: 'hash',
     name: '해시 생성기',
   },
+  {
+    page: 'html-to-text',
+    name: 'HTML 텍스트 추출기',
+  },
 ]
