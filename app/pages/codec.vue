@@ -1,19 +1,8 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 
-import { useRouter } from "vue-router";
-
-const router = useRouter();
-
 definePageMeta({
   ssr: false
-})
-
-useHead({
-  title: 'Base64 / URL 인코더·디코더 - Text Tools',
-  meta: [
-    { name: 'viewport', content: 'width=device-width, initial-scale=1' }
-  ]
 })
 
 const rawInput = ref('')        // 1) 원본 텍스트
@@ -113,30 +102,7 @@ async function copyText(text: string) {
   <UContainer class="py-8">
     <div class="space-y-6">
       <!-- 헤더 -->
-      <div class="flex items-center justify-between gap-4">
-        <div class="space-y-1">
-          <div class="flex items-center gap-2 text-sm text-gray-500">
-            <NuxtLink to="/" class="hover:underline">Text Tools</NuxtLink>
-            <span>/</span>
-            <span>Base64 &amp; URL 인코더/디코더</span>
-          </div>
-          <h1 class="text-2xl font-bold">Base64 &amp; URL 인코더/디코더</h1>
-          <p class="text-sm text-gray-500">
-            UTF-8 기준으로 텍스트를 Base64 / URL 인코딩하거나, 인코딩된 문자열을 디코딩합니다.
-          </p>
-        </div>
-
-        <div class="flex items-center gap-2">
-          <UButton
-            variant="soft"
-            color="info"
-            icon="i-heroicons-arrow-uturn-left"
-            @click="router.push('/')"
-          >
-            목록으로
-          </UButton>
-        </div>
-      </div>
+      <PageHeader />
 
       <!-- 1. 텍스트 → Base64 / URL Encode -->
       <UCard>
@@ -166,8 +132,8 @@ async function copyText(text: string) {
             </div>
             <UTextarea
               v-model="rawInput"
-              :rows="8"
-              class="font-mono text-xs"
+              :rows="12"
+              class="font-mono text-xs w-full"
               placeholder="인코딩할 문자열을 입력하세요."
             />
           </div>
@@ -198,7 +164,7 @@ async function copyText(text: string) {
               <UTextarea
                 :model-value="base64Encoded"
                 :rows="4"
-                class="font-mono text-[11px]"
+                class="font-mono text-[11px] w-full"
                 placeholder="Base64 인코딩 결과가 여기에 표시됩니다."
                 readonly
               />
@@ -228,7 +194,7 @@ async function copyText(text: string) {
               <UTextarea
                 :model-value="urlEncoded"
                 :rows="4"
-                class="font-mono text-[11px]"
+                class="font-mono text-[11px] w-full"
                 placeholder="URL 인코딩 결과가 여기에 표시됩니다."
                 readonly
               />
@@ -266,7 +232,7 @@ async function copyText(text: string) {
             <UTextarea
               v-model="base64Input"
               :rows="6"
-              class="font-mono text-xs"
+              class="font-mono text-xs w-full"
               placeholder="Base64 인코딩된 문자열을 입력하세요."
             />
             <p
@@ -301,7 +267,7 @@ async function copyText(text: string) {
             <UTextarea
               :model-value="base64Decoded"
               :rows="6"
-              class="font-mono text-xs"
+              class="font-mono text-xs w-full"
               placeholder="디코딩된 문자열이 여기에 표시됩니다."
               readonly
             />
@@ -338,7 +304,7 @@ async function copyText(text: string) {
             <UTextarea
               v-model="urlEncodedInput"
               :rows="6"
-              class="font-mono text-xs"
+              class="font-mono text-xs w-full"
               placeholder="URL 인코딩된 문자열을 입력하세요. (예: %EC%95%88%EB%85%95)"
             />
             <p
@@ -373,7 +339,7 @@ async function copyText(text: string) {
             <UTextarea
               :model-value="urlDecoded"
               :rows="6"
-              class="font-mono text-xs"
+              class="font-mono text-xs w-full"
               placeholder="디코딩된 문자열이 여기에 표시됩니다."
               readonly
             />

@@ -1,10 +1,5 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-
-import { useRouter } from "vue-router";
-
-const router = useRouter();
-
 import JSON5 from 'json5'
 import YAML from 'yaml'
 import { XMLParser, XMLBuilder } from 'fast-xml-parser'
@@ -13,13 +8,7 @@ definePageMeta({
   ssr: false
 })
 
-useHead({
-  title: 'JSON / XML / YAML 포맷 변환기 - Text Tools',
-  meta: [
-    { name: 'viewport', content: 'width=device-width, initial-scale=1' }
-  ]
-})
-
+// 타입 정의
 type Format = 'json' | 'xml' | 'yaml' | 'unknown'
 
 const rawInput = ref('')
@@ -27,13 +16,11 @@ const inputFormat = ref<Format>('unknown')
 const parseError = ref<string | null>(null)
 const parseInfo = ref<string | null>(null)
 
-// 출력 포맷 선택
+// 출력 옵션 상태
 const targetFormat = ref<'json' | 'xml' | 'yaml'>('json')
-
-// 보기 모드 (예쁘게 / 짧게)
 const viewMode = ref<'pretty' | 'compact'>('pretty')
 
-// XML 파서/빌더 설정
+// 공통 파서 설정 (XML)
 const xmlParser = new XMLParser({
   ignoreAttributes: false,
   attributeNamePrefix: '@_',
@@ -42,137 +29,128 @@ const xmlParser = new XMLParser({
   parseAttributeValue: true,
 })
 
-const xmlBuilderPretty = new XMLBuilder({
-  ignoreAttributes: false,
-  attributeNamePrefix: '@_',
-  format: true,
-  indentBy: '  ',
-  suppressEmptyNode: false,
-})
-
-const xmlBuilderCompact = new XMLBuilder({
-  ignoreAttributes: false,
-  attributeNamePrefix: '@_',
-  format: false,
-})
-
-// 내부 공통 JS 객체
+// 내부 변환용 데이터
 const parsedData = ref<any | null>(null)
 
+/**
+ *
+ * 포맷 감지 및 파싱 로직
+ */
 function detectAndParse() {
-  const text = rawInput.value
+  const text = rawInput.value.trim()
+
+  // 초기화
   inputFormat.value = 'unknown'
   parseError.value = null
   parseInfo.value = null
   parsedData.value = null
 
-  const trimmed = text.trim()
-  if (!trimmed) return
+  if (!text) return
 
-  // 1) JSON5 시도
-  try {
-    const obj = JSON5.parse(text)
-    parsedData.value = obj
-    inputFormat.value = 'json'
-    parseInfo.value = '입력 포맷: JSON (JSON5 허용)'
-    return
-  } catch {}
+  // 1. JSON (JSON5 포함) 감지: { 나 [ 로 시작할 때 우선 시도
+  if (text.startsWith('{') || text.startsWith('[')) {
+    try {
+      parsedData.value = JSON5.parse(text)
+      inputFormat.value = 'json'
+      return
+    } catch (e) {}
+  }
 
-  // 2) XML 시도
-  try {
-    const obj = xmlParser.parse(text)
-    parsedData.value = obj
-    inputFormat.value = 'xml'
-    parseInfo.value = '입력 포맷: XML'
-    return
-  } catch {}
+  // 2. XML 감지: < 로 시작할 때 우선 시도
+  if (text.startsWith('<')) {
+    try {
+      const obj = xmlParser.parse(text)
+      // XML 파서는 일반 텍스트도 객체로 만드는 경우가 있어 키 검사 수행
+      if (Object.keys(obj).length > 0) {
+        parsedData.value = obj
+        inputFormat.value = 'xml'
+        return
+      }
+    } catch (e) {}
+  }
 
-  // 3) YAML 시도
+  // 3. YAML 감지 (JSON/XML이 아닌 경우의 보루)
   try {
     const obj = YAML.parse(text)
-    parsedData.value = obj
-    inputFormat.value = 'yaml'
-    parseInfo.value = '입력 포맷: YAML'
-    return
-  } catch {}
+    // YAML은 단순 문자열도 성공으로 간주하므로 '객체' 형태인 경우만 인정
+    if (obj !== null && typeof obj === 'object') {
+      parsedData.value = obj
+      inputFormat.value = 'yaml'
+      return
+    }
+  } catch (e) {}
 
-  // 전부 실패
-  parseError.value = 'JSON(JSON5), XML, YAML 중 어떤 포맷으로도 파싱할 수 없습니다.'
+  // 모두 실패한 경우
+  parseError.value = '포맷을 판별할 수 없거나 데이터가 올바르지 않습니다.'
 }
 
+// 입력값이 바뀔 때마다 감지 실행
 watch(rawInput, detectAndParse, { immediate: true })
 
-// ─── 포맷별 출력 문자열 ───
-
-// JSON
-const jsonPretty = computed(() =>
-  parsedData.value != null ? JSON.stringify(parsedData.value, null, 2) : ''
-)
-const jsonCompact = computed(() =>
-  parsedData.value != null ? JSON.stringify(parsedData.value) : ''
-)
-
-// YAML (라이브러리 기본 포맷, compact는 크게 다르게 만들기 어려워서 동일하게 사용)
-const yamlPretty = computed(() =>
-  parsedData.value != null ? YAML.stringify(parsedData.value) : ''
-)
-const yamlCompact = yamlPretty // YAML은 사실상 한 가지 포맷만
-
-// XML
-const xmlPretty = computed(() => {
-  if (parsedData.value == null) return ''
-  try {
-    return xmlBuilderPretty.build(parsedData.value)
-  } catch {
-    return ''
-  }
-})
-
-const xmlCompact = computed(() => {
-  if (parsedData.value == null) return ''
-  try {
-    return xmlBuilderCompact.build(parsedData.value)
-  } catch {
-    return ''
-  }
-})
-
-// 현재 선택된 포맷 + 보기 모드에 따른 최종 출력
+/**
+ * 최종 출력 문자열 계산
+ */
 const currentOutput = computed(() => {
-  if (!parsedData.value) return ''
+  if (parsedData.value == null) return ''
 
-  const mode = viewMode.value
+  const isPretty = viewMode.value === 'pretty'
   const fmt = targetFormat.value
 
-  if (fmt === 'json') {
-    return mode === 'pretty' ? jsonPretty.value : jsonCompact.value
-  }
-  if (fmt === 'xml') {
-    return mode === 'pretty' ? xmlPretty.value : xmlCompact.value
-  }
-  if (fmt === 'yaml') {
-    return mode === 'pretty' ? yamlPretty.value : yamlCompact.value
+  try {
+    // JSON 출력
+    if (fmt === 'json') {
+      return isPretty
+        ? JSON.stringify(parsedData.value, null, 2)
+        : JSON.stringify(parsedData.value)
+    }
+
+    // YAML 출력
+    if (fmt === 'yaml') {
+      // YAML은 compact 모드가 큰 의미가 없으므로 정석대로 출력
+      return YAML.stringify(parsedData.value, {
+        indent: 2,
+        blockQuote: 'literal'
+      })
+    }
+
+    // XML 출력
+    if (fmt === 'xml') {
+      const builder = new XMLBuilder({
+        ignoreAttributes: false,
+        attributeNamePrefix: '@_',
+        format: isPretty,
+        indentBy: '  '
+      })
+      return builder.build(parsedData.value)
+    }
+  } catch (e: any) {
+    return `변환 중 오류 발생: ${e.message}`
   }
   return ''
 })
 
 const outputLength = computed(() => currentOutput.value.length)
 
+// 결과 복사 기능
 async function copyOutput() {
   if (!currentOutput.value) return
   try {
     await navigator.clipboard.writeText(currentOutput.value)
-    alert('복사되었습니다.')
+    alert('변환된 결과가 복사되었습니다.')
   } catch {
     alert('클립보드 복사에 실패했습니다.')
   }
 }
 
+// 라벨 표시용 유틸
 function formatLabel(fmt: Format) {
-  if (fmt === 'json') return 'JSON (JSON5 허용)'
-  if (fmt === 'xml') return 'XML'
-  if (fmt === 'yaml') return 'YAML'
-  return '알 수 없음'
+  const labels: Record<Format, string> = {
+    json: 'JSON',
+    xml: 'XML',
+    yaml: 'YAML',
+    unknown: '알 수 없음'
+  }
+  return labels[fmt]
 }
 </script>
 
@@ -181,30 +159,7 @@ function formatLabel(fmt: Format) {
   <div class="px-4 sm:px-6 lg:px-8 py-6 md:py-8">
     <div class="space-y-6">
       <!-- 헤더 -->
-      <div class="flex items-center justify-between gap-4">
-        <div class="space-y-1">
-          <div class="flex items-center gap-2 text-sm text-gray-500">
-            <NuxtLink to="/" class="hover:underline">Text Tools</NuxtLink>
-            <span>/</span>
-            <span>JSON / XML / YAML 포맷 변환기</span>
-          </div>
-          <h1 class="text-2xl font-bold">JSON / XML / YAML 포맷 변환기</h1>
-          <p class="text-sm text-gray-500">
-            JSON(JSON5 허용), XML, YAML 을 서로 변환하고, 예쁘게 보기와 압축(짧게) 보기를 선택할 수 있습니다.
-          </p>
-        </div>
-
-        <div class="flex items-center gap-2">
-          <UButton
-            variant="soft"
-            color="info"
-            icon="i-heroicons-arrow-uturn-left"
-            @click="router.push('/')"
-          >
-            목록으로
-          </UButton>
-        </div>
-      </div>
+      <PageHeader />
 
       <!-- 상태/옵션 -->
       <div class="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between text-xs">

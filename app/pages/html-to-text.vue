@@ -5,13 +5,6 @@ definePageMeta({
   ssr: false
 })
 
-useHead({
-  title: 'HTML 텍스트 추출기 - Text Tools',
-  meta: [
-    { name: 'viewport', content: 'width=device-width, initial-scale=1' }
-  ]
-})
-
 const htmlInput = ref('')
 const excludeClassesInput = ref('') // 공백 구분 수동 제외 클래스
 const parseError = ref<string | null>(null)
@@ -166,21 +159,7 @@ async function copyText() {
   <div class="px-4 sm:px-6 lg:px-8 py-6 md:py-8">
     <div class="space-y-6">
       <!-- 헤더 -->
-      <div class="space-y-1">
-        <div class="flex items-center gap-2 text-sm text-gray-500">
-          <NuxtLink to="/" class="hover:underline">Text Tools</NuxtLink>
-          <span>/</span>
-          <span>HTML 텍스트 추출기</span>
-        </div>
-        <h1 class="text-2xl font-semibold">
-          HTML 텍스트 추출기
-        </h1>
-        <p class="text-sm text-gray-500">
-          HTML에서 태그를 제거하고 실제 화면에 보이는 텍스트만 추출합니다.
-          선택한 클래스, <code>display:none</code>, <code>visibility:hidden</code> 옵션에 따라
-          특정 영역을 제외할 수 있습니다.
-        </p>
-      </div>
+      <PageHeader />
 
       <!-- 입력/출력 2열 -->
       <div class="grid gap-4 lg:gap-6 md:grid-cols-[minmax(0,1.1fr)_minmax(0,1.3fr)]">

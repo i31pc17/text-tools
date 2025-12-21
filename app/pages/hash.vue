@@ -1,11 +1,9 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import { useRouter } from "vue-router";
+
 import MD5 from "crypto-js/md5";
 import SHA256 from "crypto-js/sha256";
 import SHA512 from "crypto-js/sha512";
-
-const router = useRouter();
 
 const input = ref<string>("");
 
@@ -45,37 +43,13 @@ async function copyHash(value: string) {
     alert("클립보드 복사에 실패했습니다.");
   }
 }
-
-useHead({
-  title: "해시 생성기 - Text Tools",
-});
 </script>
 
 <template>
   <UContainer class="py-8">
     <div class="space-y-6">
       <!-- 헤더 -->
-      <div class="flex items-center justify-between gap-4">
-        <div class="space-y-1">
-          <div class="flex items-center gap-2 text-sm text-gray-500">
-            <NuxtLink to="/" class="hover:underline">Text Tools</NuxtLink>
-            <span>/</span>
-            <span>해시 생성기</span>
-          </div>
-          <h1 class="text-2xl font-bold">해시 생성기</h1>
-        </div>
-
-        <div class="flex items-center gap-2">
-          <UButton
-            variant="soft"
-            color="info"
-            icon="i-heroicons-arrow-uturn-left"
-            @click="router.push('/')"
-          >
-            목록으로
-          </UButton>
-        </div>
-      </div>
+      <PageHeader />
 
       <!-- 본문: 2열 레이아웃 -->
       <div class="grid gap-4 md:grid-cols-2">
@@ -98,7 +72,7 @@ useHead({
             <UTextarea
               v-model="input"
               :rows="12"
-              class="font-mono text-sm"
+              class="font-mono text-sm w-full"
               placeholder="해시를 계산할 문자열을 입력하세요."
             />
           </div>

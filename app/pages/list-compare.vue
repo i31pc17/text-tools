@@ -1,8 +1,5 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { useRouter } from "vue-router";
-
-const router = useRouter();
 
 const leftInput = ref('')
 const rightInput = ref('')
@@ -113,40 +110,13 @@ async function copyText(text: string) {
     alert('클립보드 복사에 실패했습니다.')
   }
 }
-
-useHead({
-  title: '리스트 비교기 - Text Tools'
-})
 </script>
 
 <template>
   <UContainer class="py-8">
     <div class="space-y-6">
       <!-- 헤더 -->
-      <div class="flex items-center justify-between gap-4">
-        <div class="space-y-1">
-          <div class="flex items-center gap-2 text-sm text-gray-500">
-            <NuxtLink to="/" class="hover:underline">Text Tools</NuxtLink>
-            <span>/</span>
-            <span>리스트 비교</span>
-          </div>
-          <h1 class="text-2xl font-bold">리스트 비교</h1>
-          <p class="text-sm text-gray-500">
-            엔터(줄바꿈)로 구분된 두 개의 리스트를 비교해서 합집합, 교집합, 차집합, 대칭차집합을 한 번에 확인하고 복사할 수 있습니다.
-          </p>
-        </div>
-
-        <div class="flex items-center gap-2">
-          <UButton
-            variant="soft"
-            color="info"
-            icon="i-heroicons-arrow-uturn-left"
-            @click="router.push('/')"
-          >
-            목록으로
-          </UButton>
-        </div>
-      </div>
+      <PageHeader />
 
       <!-- 입력 영역: 왼쪽 / 오른쪽 나란히 -->
       <UCard>
@@ -171,7 +141,7 @@ useHead({
             <UTextarea
               v-model="leftInput"
               :rows="12"
-              class="font-mono text-xs"
+              class="font-mono text-xs w-full"
               placeholder="왼쪽 리스트 항목들을 줄바꿈으로 입력하세요."
             />
           </div>
@@ -187,7 +157,7 @@ useHead({
             <UTextarea
               v-model="rightInput"
               :rows="12"
-              class="font-mono text-xs"
+              class="font-mono text-xs w-full"
               placeholder="오른쪽 리스트 항목들을 줄바꿈으로 입력하세요."
             />
           </div>
@@ -273,7 +243,7 @@ useHead({
           <UTextarea
             :model-value="unionResult.text"
             :rows="6"
-            class="font-mono text-xs"
+            class="font-mono text-xs w-full"
             placeholder="합집합 결과가 여기에 표시됩니다."
             readonly
           />
@@ -314,7 +284,7 @@ useHead({
           <UTextarea
             :model-value="intersectionResult.text"
             :rows="6"
-            class="font-mono text-xs"
+            class="font-mono text-xs w-full"
             placeholder="교집합 결과가 여기에 표시됩니다."
             readonly
           />
@@ -355,7 +325,7 @@ useHead({
           <UTextarea
             :model-value="leftDiffResult.text"
             :rows="6"
-            class="font-mono text-xs"
+            class="font-mono text-xs w-full"
             placeholder="왼쪽 차집합 결과가 여기에 표시됩니다."
             readonly
           />
@@ -396,7 +366,7 @@ useHead({
           <UTextarea
             :model-value="rightDiffResult.text"
             :rows="6"
-            class="font-mono text-xs"
+            class="font-mono text-xs w-full"
             placeholder="오른쪽 차집합 결과가 여기에 표시됩니다."
             readonly
           />
@@ -437,7 +407,7 @@ useHead({
           <UTextarea
             :model-value="symDiffResult.text"
             :rows="6"
-            class="font-mono text-xs"
+            class="font-mono text-xs w-full"
             placeholder="대칭차집합 결과가 여기에 표시됩니다."
             readonly
           />

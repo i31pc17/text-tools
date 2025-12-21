@@ -2,30 +2,7 @@
   <UContainer class="py-8">
     <div class="space-y-6">
       <!-- 헤더 -->
-      <div class="flex items-center justify-between gap-4">
-        <div class="space-y-1">
-          <div class="flex items-center gap-2 text-sm text-gray-500">
-            <NuxtLink to="/" class="hover:underline">Text Tools</NuxtLink>
-            <span>/</span>
-            <span>Array 변환기</span>
-          </div>
-          <h1 class="text-2xl font-bold">Array 변환기</h1>
-          <p class="text-sm text-gray-500">
-            JSON / XML / 줄바꿈·콤마 텍스트에서 원하는 필드만 뽑아서 다양한 배열 포맷으로 변환합니다.
-          </p>
-        </div>
-
-        <div class="flex items-center gap-2">
-          <UButton
-            variant="soft"
-            color="info"
-            icon="i-heroicons-arrow-uturn-left"
-            @click="router.push('/')"
-          >
-            목록으로
-          </UButton>
-        </div>
-      </div>
+      <PageHeader />
 
       <!-- 본문: 2열 레이아웃 -->
       <div class="grid gap-4 md:grid-cols-2">
@@ -43,8 +20,8 @@
           <div class="flex-1">
             <UTextarea
               v-model="input"
-              :rows="16"
-              class="font-mono text-xs"
+              :rows="24"
+              class="font-mono text-xs w-full"
               placeholder="JSON, XML, 또는 줄바꿈/콤마로 구분된 텍스트를 붙여넣으세요."
             />
           </div>
@@ -287,8 +264,8 @@
             <div class="min-h-[200px]">
               <UTextarea
                 v-model="formattedOutput"
-                :rows="10"
-                class="font-mono text-xs"
+                :rows="24"
+                class="font-mono text-xs w-full"
                 readonly
               />
             </div>
@@ -301,14 +278,11 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from "vue";
-import { useRouter } from "vue-router";
 
 // DOMParser 때문에 클라이언트 전용
 definePageMeta({
   ssr: false,
 });
-
-const router = useRouter();
 
 const input = ref<string>("");
 
@@ -793,8 +767,4 @@ watch(
   },
   { immediate: true }
 );
-
-useHead({
-  title: "Array 변환기 - Text Tools",
-});
 </script>

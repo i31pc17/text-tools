@@ -31,7 +31,7 @@ const tools = textTools
           </div>
 
           <div class="mt-4 flex justify-end">
-            <NuxtLink :to="`/tools/${tool.page}`">
+            <NuxtLink :to="`/${tool.page}`">
               <UButton size="sm">사용하기</UButton>
             </NuxtLink>
           </div>
