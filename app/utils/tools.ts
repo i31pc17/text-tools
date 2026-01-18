@@ -45,4 +45,9 @@ export const textTools: TextTool[] = [
     description: "JSON, XML, 텍스트에서 숫자를 추출하여 합계, 평균 등 통계를 계산합니다.",
     page: "number-analyzer",
   },
+  {
+    name: "세계 시간 변환기",
+    description: "날짜 문자열이나 유닉스 타임을 주요 국가별 시간으로 변환합니다.",
+    page: "time-converter",
+  },
 ]
