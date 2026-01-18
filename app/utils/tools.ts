@@ -40,4 +40,9 @@ export const textTools: TextTool[] = [
     page: 'html-to-text',
     name: 'HTML 텍스트 추출기',
   },
+  {
+    name: "숫자 통계 분석기",
+    description: "JSON, XML, 텍스트에서 숫자를 추출하여 합계, 평균 등 통계를 계산합니다.",
+    page: "number-analyzer",
+  },
 ]
