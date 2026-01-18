@@ -315,34 +315,34 @@ const format = (n: number) => n.toLocaleString(undefined, { maximumFractionDigit
         </div>
 
         <div class="space-y-4">
-          <div v-if="stats" class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-2 gap-3">
             <UCard class="col-span-1">
               <div class="text-[10px] text-gray-500 font-bold uppercase">합계</div>
-              <div class="text-xl font-mono font-bold text-primary">{{ format(stats.sum) }}</div>
+              <div class="text-xl font-mono font-bold text-primary">{{ stats ? format(stats.sum) : '-' }}</div>
             </UCard>
             <UCard class="col-span-1">
               <div class="text-[10px] text-gray-500 font-bold uppercase">평균</div>
-              <div class="text-xl font-mono font-bold text-primary">{{ format(stats.avg) }}</div>
+              <div class="text-xl font-mono font-bold text-primary">{{ stats ? format(stats.avg) : '-' }}</div>
             </UCard>
             <UCard class="col-span-1">
               <div class="text-[10px] text-gray-500 font-bold uppercase">중앙값</div>
-              <div class="text-md font-mono">{{ format(stats.median) }}</div>
+              <div class="text-md font-mono">{{ stats ? format(stats.median) : '-' }}</div>
             </UCard>
             <UCard class="col-span-1">
               <div class="text-[10px] text-gray-500 font-bold uppercase">최빈값</div>
-              <div class="text-md font-mono truncate" :title="stats.mode">{{ stats.mode }}</div>
+              <div class="text-md font-mono truncate">{{ stats ? stats.mode : '-' }}</div>
             </UCard>
             <UCard class="col-span-1">
               <div class="text-[10px] text-blue-500 font-bold uppercase">최소값</div>
-              <div class="text-md font-mono">{{ format(stats.min) }}</div>
+              <div class="text-md font-mono">{{ stats ? format(stats.min) : '-' }}</div>
             </UCard>
             <UCard class="col-span-1">
               <div class="text-[10px] text-red-500 font-bold uppercase">최대값</div>
-              <div class="text-md font-mono">{{ format(stats.max) }}</div>
+              <div class="text-md font-mono">{{ stats ? format(stats.max) : '-' }}</div>
             </UCard>
           </div>
 
-          <UCard v-if="numberItems.length">
+          <UCard v-if="numberItems && numberItems.length">
             <template #header><span class="text-xs font-bold text-gray-400">추출된 데이터 ({{ numberItems.length }}개)</span></template>
             <div class="max-h-48 overflow-y-auto font-mono text-[11px] p-3 bg-slate-900 text-slate-300 rounded leading-relaxed">
               {{ numberItems.join(', ') }}
