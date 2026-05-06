@@ -1,319 +1,125 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+definePageMeta({ ssr: false })
 
-definePageMeta({
-  ssr: false
-})
-
-const htmlInput = ref('')
-const excludeClassesInput = ref('') // 공백 구분 수동 제외 클래스
-const parseError = ref<string | null>(null)
-
-// 스타일 기반 제외 옵션
+const html = ref('')
+const excludeInput = ref('')
 const excludeDisplayNone = ref(false)
-const excludeVisibilityHidden = ref(false)
+const excludeVisHidden = ref(false)
+const autoExcluded = ref<string[]>([])
 
-// 상단에서 선택하는 자동 제외 클래스들
-const autoExcludedClasses = ref<string[]>([])
-
-// 수동 입력 클래스 배열
-const manualExcludedClasses = computed(() =>
-  excludeClassesInput.value
-    .split(/\s+/)
-    .map(c => c.trim())
-    .filter(Boolean)
+const manual = computed(() =>
+  excludeInput.value.split(/\s+/).map((s) => s.trim()).filter(Boolean)
 )
+const excludeSet = computed(() => new Set([...manual.value, ...autoExcluded.value]))
 
-// 최종 제외 클래스 세트 (수동 + 자동)
-const excludeClassSet = computed(() => {
-  return new Set<string>([
-    ...manualExcludedClasses.value,
-    ...autoExcludedClasses.value
-  ])
-})
+interface Result { text: string; counts: Record<string, number>; error: string | null }
 
-type ParseResult = {
-  text: string
-  classCounts: Record<string, number>
-}
-
-function parseHtml(
-  html: string,
-  excludeClasses: Set<string>,
-  useDisplayNone: boolean,
-  useVisibilityHidden: boolean
-): ParseResult {
-  parseError.value = null
-
-  const result: ParseResult = {
-    text: '',
-    classCounts: {}
-  }
-
-  const trimmed = html.trim()
-  if (!trimmed) {
-    return result
-  }
-
+const result = computed<Result>(() => {
+  const trimmed = html.value.trim()
+  if (!trimmed) return { text: '', counts: {}, error: null }
+  if (typeof DOMParser === 'undefined') return { text: '', counts: {}, error: null }
   try {
-    const parser = new DOMParser()
-    const doc = parser.parseFromString(html, 'text/html')
-
-    // script/style 같은 건 바로 제거
-    doc.querySelectorAll('script, style, noscript, template').forEach(el =>
-      el.remove()
-    )
-
-    const allElements = Array.from(doc.body.querySelectorAll<HTMLElement>('*'))
-
-    for (const el of allElements) {
-      // 클래스 카운트 수집
-      for (const cls of el.classList) {
-        if (!cls) continue
-        result.classCounts[cls] = (result.classCounts[cls] || 0) + 1
-      }
-
-      // style 속성 검사
-      const styleAttr = (el.getAttribute('style') || '').toLowerCase()
-      const hasDisplayNone = /display\s*:\s*none/.test(styleAttr)
-      const hasVisibilityHidden = /visibility\s*:\s*hidden/.test(styleAttr)
-
-      const shouldExcludeByStyle =
-        (useDisplayNone && hasDisplayNone) ||
-        (useVisibilityHidden && hasVisibilityHidden)
-
-      // 제외 클래스 포함 여부
-      const hasExcludedClass = Array.from(el.classList).some(cls =>
-        excludeClasses.has(cls)
-      )
-
-      if (shouldExcludeByStyle || hasExcludedClass) {
-        el.remove()
-      }
+    const doc = new DOMParser().parseFromString(html.value, 'text/html')
+    doc.querySelectorAll('script, style, noscript, template').forEach((el) => el.remove())
+    const all = Array.from(doc.body.querySelectorAll('*'))
+    const counts: Record<string, number> = {}
+    for (const el of all) {
+      el.classList.forEach((c) => { if (c) counts[c] = (counts[c] || 0) + 1 })
+      const sty = (el.getAttribute('style') || '').toLowerCase()
+      const hasDN = /display\s*:\s*none/.test(sty)
+      const hasVH = /visibility\s*:\s*hidden/.test(sty)
+      const styleX = (excludeDisplayNone.value && hasDN) || (excludeVisHidden.value && hasVH)
+      const classX = Array.from(el.classList).some((c) => excludeSet.value.has(c))
+      if (styleX || classX) el.remove()
     }
-
-    // 최종 텍스트 추출 (브라우저 렌더링에 가까운 innerText 사용)
-    const rawText = doc.body.innerText || ''
-    const normalized = rawText
-      .split('\n')
-      .map(line => line.trim())
-      .filter(line => line.length > 0)
-      .join('\n')
-
-    result.text = normalized
-    return result
-  } catch (e) {
-    parseError.value = 'HTML 파싱 중 오류가 발생했습니다.'
-    return result
+    const raw = (doc.body as HTMLElement).innerText || ''
+    const text = raw.split('\n').map((l) => l.trim()).filter((l) => l.length > 0).join('\n')
+    return { text, counts, error: null }
+  } catch {
+    return { text: '', counts: {}, error: 'HTML 파싱 중 오류가 발생했습니다.' }
   }
-}
-
-const parseResult = computed(() =>
-  parseHtml(
-    htmlInput.value,
-    excludeClassSet.value,
-    excludeDisplayNone.value,
-    excludeVisibilityHidden.value
-  )
-)
-
-const extractedText = computed(() => parseResult.value.text)
-const classCounts = computed(() => parseResult.value.classCounts)
-
-// 상위 10개 자주 나온 클래스
-const topClasses = computed(() => {
-  const entries = Object.entries(classCounts.value)
-  entries.sort((a, b) => b[1] - a[1])
-  return entries.slice(0, 10)
 })
 
-const textLength = computed(() => extractedText.value.length)
-const lineCount = computed(() =>
-  extractedText.value ? extractedText.value.split('\n').length : 0
+const topClasses = computed(() =>
+  Object.entries(result.value.counts).sort((a, b) => b[1] - a[1]).slice(0, 10)
 )
 
-function toggleAutoClass(cls: string) {
-  if (autoExcludedClasses.value.includes(cls)) {
-    autoExcludedClasses.value = autoExcludedClasses.value.filter(c => c !== cls)
+const lineCount = computed(() => result.value.text ? result.value.text.split('\n').length : 0)
+
+function toggleAuto(c: string) {
+  if (autoExcluded.value.includes(c)) {
+    autoExcluded.value = autoExcluded.value.filter((x) => x !== c)
   } else {
-    autoExcludedClasses.value = [...autoExcludedClasses.value, cls]
-  }
-}
-
-function isAutoExcluded(cls: string) {
-  return autoExcludedClasses.value.includes(cls)
-}
-
-async function copyText() {
-  if (!extractedText.value) return
-  try {
-    await navigator.clipboard.writeText(extractedText.value)
-    alert('복사되었습니다.')
-  } catch {
-    alert('클립보드 복사에 실패했습니다.')
+    autoExcluded.value = [...autoExcluded.value, c]
   }
 }
 </script>
 
 <template>
-  <div class="px-4 sm:px-6 lg:px-8 py-6 md:py-8">
-    <div class="space-y-6">
-      <!-- 헤더 -->
-      <PageHeader />
+  <div>
+    <PageHeader />
 
-      <!-- 입력/출력 2열 -->
-      <div class="grid gap-4 lg:gap-6 md:grid-cols-[minmax(0,1.1fr)_minmax(0,1.3fr)]">
-        <!-- 왼쪽: 입력 -->
-        <UCard class="flex flex-col h-full">
-          <template #header>
-            <div class="flex flex-col gap-2">
-              <div class="flex items-center justify-between">
-                <div>
-                  <h2 class="text-sm font-semibold text-gray-800">
-                    HTML 입력
-                  </h2>
-                  <p class="text-[11px] text-gray-500">
-                    화면에 붙여넣은 HTML 소스에서 텍스트를 추출합니다.
-                  </p>
-                </div>
-                <UButton
-                  size="xs"
-                  variant="ghost"
-                  @click="htmlInput = ''"
-                >
-                  초기화
-                </UButton>
-              </div>
-
-              <!-- 스타일 제외 옵션 -->
-              <div class="flex flex-wrap items-center gap-4 text-[11px] text-gray-600">
-                <div class="flex items-center gap-2">
-                  <UCheckbox v-model="excludeDisplayNone" />
-                  <span>
-                    <code>display: none</code> 영역 텍스트 제외
-                  </span>
-                </div>
-                <div class="flex items-center gap-2">
-                  <UCheckbox v-model="excludeVisibilityHidden" />
-                  <span>
-                    <code>visibility: hidden</code> 영역 텍스트 제외
-                  </span>
-                </div>
-              </div>
-            </div>
-          </template>
-
-          <div class="space-y-3">
-            <UTextarea
-              v-model="htmlInput"
-              :rows="20"
-              class="font-mono text-xs w-full"
-              placeholder="HTML 소스를 붙여넣으세요."
-            />
-
-            <div class="space-y-1">
-              <label class="text-xs font-medium text-gray-700">
-                제외할 class 이름들 (공백 구분)
-              </label>
-              <UInput
-                v-model="excludeClassesInput"
-                class="text-xs"
-                placeholder="예: ads banner hidden-text"
-              />
-              <p class="text-[11px] text-gray-500">
-                여기에 입력한 클래스명을 가진 태그(하위 포함)의 텍스트는 추출되지 않습니다.
-              </p>
-            </div>
+    <div class="split-2-balanced">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">HTML 입력</h2>
+            <p class="card-sub">붙여넣은 소스에서 텍스트 추출</p>
           </div>
-
-          <template #footer>
-            <p
-              v-if="parseError"
-              class="text-[11px] text-red-500"
-            >
-              {{ parseError }}
-            </p>
-            <p
-              v-else
-              class="text-[11px] text-gray-500"
-            >
-              체크한 옵션에 따라
-              <code>display:none</code>,
-              <code>visibility:hidden</code>,
-              지정 클래스가 포함된 태그는 파싱 단계에서 제거됩니다.
-            </p>
-          </template>
-        </UCard>
-
-        <!-- 오른쪽: 결과 -->
-        <UCard class="flex flex-col h-full">
-          <template #header>
-            <div class="flex flex-col gap-2">
-              <div class="flex items-center justify-between">
-                <div>
-                  <h2 class="text-sm font-semibold text-gray-800">
-                    추출된 텍스트
-                  </h2>
-                  <p class="text-[11px] text-gray-500">
-                    실제 HTML 렌더링과 유사한 수준으로 줄바꿈을 넣어서 출력합니다.
-                  </p>
-                </div>
-                <div class="flex flex-col items-end gap-1">
-                  <span class="text-[11px] text-gray-500">
-                    줄 수: {{ lineCount }} • 길이: {{ textLength }} 자
-                  </span>
-                  <UButton
-                    size="xs"
-                    variant="soft"
-                    icon="i-heroicons-clipboard"
-                    :disabled="!extractedText"
-                    @click="copyText"
-                  >
-                    결과 복사
-                  </UButton>
-                </div>
-              </div>
-
-              <!-- 상위 클래스들 체크 버튼 -->
-              <div v-if="topClasses.length" class="space-y-1">
-                <p class="text-[11px] text-gray-500">
-                  자주 등장하는 클래스 (최대 10개) —
-                  클릭해서 해당 클래스 영역의 텍스트를 제외할 수 있습니다.
-                </p>
-                <div class="flex flex-wrap gap-2">
-                  <UButton
-                    v-for="[cls, count] in topClasses"
-                    :key="cls"
-                    size="xs"
-                    :variant="isAutoExcluded(cls) ? 'solid' : 'soft'"
-                    :color="isAutoExcluded(cls) ? 'primary' : 'neutral'"
-                    class="text-[11px]"
-                    @click="toggleAutoClass(cls)"
-                  >
-                    <span class="font-mono">{{ cls }}</span>
-                    <span class="text-[10px] text-gray-500 ml-1">
-                      ({{ count }})
-                    </span>
-                  </UButton>
-                </div>
-              </div>
-            </div>
-          </template>
-
-          <div
-            class="h-full min-h-[320px] rounded border border-gray-200 bg-slate-50/80 font-mono text-[11px] overflow-auto p-3 whitespace-pre-wrap"
-          >
-            <template v-if="extractedText">
-              {{ extractedText }}
-            </template>
-            <span
-              v-else
-              class="text-[11px] text-gray-400"
-            >
-              HTML을 입력하면 여기에서 추출된 텍스트를 확인할 수 있습니다.
-            </span>
+          <BaseButton size="xs" variant="danger-ghost" icon="reset" @click="html = ''">초기화</BaseButton>
+        </div>
+        <div class="card-body col" style="gap: var(--pad-md)">
+          <div class="row" style="gap: var(--pad-lg)">
+            <label class="checkbox"><input v-model="excludeDisplayNone" type="checkbox"> display:none 제외</label>
+            <label class="checkbox"><input v-model="excludeVisHidden" type="checkbox"> visibility:hidden 제외</label>
           </div>
-        </UCard>
+          <textarea v-model="html" class="textarea" rows="16" placeholder="HTML 소스를 붙여넣으세요." />
+          <div class="col-tight">
+            <span class="label">제외할 class (공백 구분)</span>
+            <input v-model="excludeInput" class="input" placeholder="예: ads banner hidden-text">
+          </div>
+        </div>
+        <div class="card-footer">
+          <span :class="result.error ? 'hint hint-error' : 'hint'">
+            {{ result.error || '체크한 옵션의 태그는 파싱 단계에서 제거됩니다.' }}
+          </span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">추출된 텍스트</h2>
+            <p class="card-sub">렌더링과 유사한 줄바꿈으로 출력</p>
+          </div>
+          <div class="col-tight" style="align-items: flex-end">
+            <span class="hint">줄 {{ lineCount }} • {{ result.text.length }}자</span>
+            <CopyButton :text="result.text" label="결과 복사" />
+          </div>
+        </div>
+
+        <div v-if="topClasses.length > 0" style="padding: var(--pad-md); border-bottom: 1px solid var(--border)">
+          <div class="hint" style="margin-bottom: 8px">자주 등장하는 클래스 — 클릭해서 해당 영역 텍스트를 제외</div>
+          <div class="chip-row">
+            <button
+              v-for="[c, n] in topClasses"
+              :key="c"
+              class="chip"
+              :data-active="autoExcluded.includes(c)"
+              @click="toggleAuto(c)"
+            >
+              {{ c }} <span style="opacity: 0.6">({{ n }})</span>
+            </button>
+          </div>
+        </div>
+
+        <div
+          class="card-body"
+          style="max-height: 540px; overflow: auto; font-family: var(--font-mono); font-size: var(--fs-xs); line-height: 1.7; white-space: pre-wrap"
+        >
+          <template v-if="result.text">{{ result.text }}</template>
+          <span v-else class="hint">HTML을 입력하면 여기에 추출된 텍스트가 표시됩니다.</span>
+        </div>
       </div>
     </div>
   </div>
